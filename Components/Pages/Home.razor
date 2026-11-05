@@ -1,0 +1,834 @@
+@page "/"
+@using LinearRegressionSimulator.Models
+@using LinearRegressionSimulator.Services
+
+<PageTitle>Linear Regression Simulator</PageTitle>
+
+<style>
+    html, body {
+        height: 100%;
+        margin: 0;
+        background-color: #EAECF0;
+        color: #0f172a;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 0.95rem;
+    }
+
+    input, button, table, th, td, select, textarea {
+        font-family: inherit;
+    }
+
+    .app-wrapper {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 30px 20px;
+        box-sizing: border-box;
+    }
+
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin-bottom: 48px;
+        width: 100%;
+        text-align: center;
+        flex-wrap: wrap; 
+    }
+
+    .header h1 {
+        margin: 0;
+        font-size: 1.85rem;
+        font-weight: 700;
+        color: #e56a1b;
+        letter-spacing: 0.3px;
+        text-align: center;
+    }
+
+    .header-icon {
+        color: #e56a1b;
+        display: inline-flex;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    .dashboard-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 36px;
+        width: 100%;
+        max-width: 1440px;
+        align-items: flex-start;
+        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .data-section {
+        flex: 1;
+        min-width: 340px;
+        max-width: 440px;
+    }
+
+    .results-section {
+        flex: 2;
+        min-width: 360px;
+        width: 100%;
+        max-width: 920px;
+        opacity: 1;
+        transform: translateX(0);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .results-section.entering {
+        animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .results-section.closing {
+        opacity: 0;
+        transform: translateX(12px);
+        pointer-events: none;
+    }
+
+    @@keyframes slideIn {
+        from { opacity: 0; transform: translateX(16px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        border-bottom: 2px solid #233D4D;
+        padding-bottom: 10px;
+        margin-bottom: 16px;
+    }
+
+    .section-header h2 {
+        margin: 0;
+        color: #233D4D;
+        font-size: 1.35rem;
+        font-weight: 700;
+    }
+
+    .pair-count {
+        font-size: 0.88rem;
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    input[type="number"] { -moz-appearance: textfield; }
+
+    .input-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .text-input {
+        flex: 1;
+        min-width: 0;
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        font-size: 0.95rem;
+        text-align: center;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        box-sizing: border-box;
+        background: #ffffff;
+    }
+
+    .text-input:focus {
+        border-color: #233D4D;
+        box-shadow: 0 0 0 2px rgba(35, 61, 77, 0.12);
+    }
+
+    .btn-dark {
+        background-color: #233D4D;
+        color: white;
+        border: none;
+        padding: 10px 22px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background-color 0.2s;
+        box-sizing: border-box;
+        white-space: nowrap;
+        font-size: 0.95rem;
+    }
+    .btn-dark:hover { background-color: #1a2d39; }
+
+    .table-container {
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        background: #ffffff;
+        width: 100%;
+        box-sizing: border-box;
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        white-space: nowrap;
+    }
+
+    th {
+        background-color: #f8f9fa;
+        color: #233D4D;
+        padding: 10px 8px;
+        font-size: 0.9rem;
+        border-bottom: 1px solid #d1d5db;
+        text-align: center;
+        font-weight: 600;
+    }
+
+    td {
+        border-bottom: 1px solid #EAECF0;
+        padding: 0;
+        vertical-align: middle;
+        text-align: center;
+        transition: background-color 0.15s ease;
+    }
+
+    tbody tr:hover td {
+        background-color: #f1f5f9;
+    }
+
+    .math-table td {
+        padding: 10px 8px;
+        font-size: 0.9rem;
+    }
+
+    .highlight-col {
+        background-color: rgba(35, 61, 77, 0.04);
+        font-weight: 700;
+        color: #233D4D;
+        border-left: 1px solid #e2e8f0;
+    }
+    th.highlight-col {
+        background-color: #e9eef2;
+        color: #123F36;
+        font-weight: 700;
+    }
+    tbody tr:hover td.highlight-col {
+        background-color: #e2eaf0;
+    }
+
+    .num-col {
+        width: 40px;
+        color: #71717a;
+        font-size: 0.88rem;
+        font-weight: 500;
+    }
+    .action-col { width: 50px; }
+
+    .sum-row td {
+        background-color: #f8f9fa;
+        font-weight: 700;
+        border-top: 2px solid #d1d5db;
+        padding: 10px 8px;
+        color: #233D4D;
+    }
+
+    .inline-input {
+        width: 100%;
+        box-sizing: border-box;
+        border: none;
+        padding: 10px 6px;
+        text-align: center;
+        font-size: 0.95rem;
+        background: transparent;
+        outline: none;
+        transition: background-color 0.2s;
+    }
+    .inline-input:hover, .inline-input:focus { background-color: #e2e8f0; }
+
+    .btn-simulate {
+        width: 100%;
+        background-color: #FE7F2D;
+        color: white;
+        border: none;
+        margin-top: 16px;
+        font-size: 1rem;
+        padding: 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 700;
+        transition: background-color 0.2s;
+        box-sizing: border-box;
+    }
+    .btn-simulate:hover { background-color: #e56a1b; }
+    .btn-simulate:disabled { background-color: #cbd5e1; cursor: not-allowed; }
+
+    .btn-icon {
+        background: none;
+        border: none;
+        color: #dc3545;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        transition: 0.2s;
+    }
+
+    .btn-icon:hover { 
+        background-color: #dc3545; 
+        color: #ffebed;
+    }
+
+    .equation-line {
+        font-size: 1.05rem;
+        color: #233D4D;
+        font-weight: 600;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        position: relative;
+    }
+
+    .equation-value {
+        font-weight: 700;
+        color: #233D4D;
+    }
+
+    .info-container {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    .info-icon {
+        color: #64748b;
+        transition: color 0.2s;
+    }
+    .info-container:hover .info-icon {
+        color: #233D4D;
+    }
+
+    .math-tooltip {
+        visibility: hidden;
+        opacity: 0;
+        position: absolute;
+        top: 28px;
+        left: -10px;
+        z-index: 100;
+        background-color: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 14px 18px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        width: 320px;
+        transition: opacity 0.2s ease, visibility 0.2s ease;
+        pointer-events: none;
+    }
+
+    .info-container:hover .math-tooltip {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    .tooltip-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #64748b;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 4px;
+    }
+
+    .tooltip-calc-block {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.98rem;
+        color: #1e293b;
+        margin-bottom: 10px;
+    }
+
+    .fraction {
+        display: inline-flex;
+        flex-direction: column;
+        vertical-align: middle;
+        text-align: center;
+        padding: 0 4px;
+    }
+
+    .fraction .num {
+        border-bottom: 1.5px solid #1e293b;
+        padding-bottom: 1px;
+        font-size: 0.88rem;
+    }
+
+    .fraction .den {
+        padding-top: 1px;
+        font-size: 0.88rem;
+    }
+
+    .tooltip-calc-step {
+        font-size: 0.88rem;
+        font-family: inherit;
+        font-weight: 600;
+        color: #0f172a;
+    }
+
+    .predict-inline-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 16px;
+        flex-wrap: wrap;
+    }
+
+    .predict-label {
+        font-weight: 600;
+        color: #233D4D;
+        font-size: 0.95rem;
+        white-space: nowrap;
+    }
+
+    .predict-input {
+        width: 170px;
+        flex: none;
+    }
+
+    .predict-result {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #233D4D;
+        white-space: nowrap;
+        margin-left: 4px;
+    }
+
+    .predict-arrow {
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    .error-message {
+        text-align: center;
+        color: #ffebed;
+        background-color: #dc3545;
+        padding: 12px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        font-size: 0.95rem;
+        border: 1px solid #dc3545;
+        font-weight: 500;
+        box-sizing: border-box;
+    }
+
+    .input-error { 
+        border-color: #dc3545 !important; 
+    }
+
+    @@media (max-width: 600px) {
+        .app-wrapper {
+            padding: 20px 12px;
+        }
+
+        .header {
+            margin-bottom: 28px;
+            gap: 8px;
+        }
+
+        .header h1 {
+            font-size: 1.35rem;
+        }
+
+        .header-icon svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .data-section,
+        .results-section {
+            min-width: 100%;
+            max-width: 100%;
+        }
+
+        .predict-inline-bar {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+        }
+
+        .predict-label {
+            text-align: center;
+        }
+
+        .predict-input {
+            width: 100%;
+        }
+
+        .predict-inline-bar .predict-result-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin-top: 4px;
+        }
+    }
+</style>
+
+<div class="app-wrapper">
+    <header class="header">
+        <span class="header-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="20" x2="21" y2="20"></line>
+                <line x1="4" y1="19" x2="20" y2="5"></line>
+                <circle cx="7" cy="14" r="1.5" fill="currentColor"></circle>
+                <circle cx="12" cy="12" r="1.5" fill="currentColor"></circle>
+                <circle cx="16" cy="7" r="1.5" fill="currentColor"></circle>
+            </svg>
+        </span>
+        <h1>Linear Regression Simulator</h1>
+        
+    </header>
+
+    <div class="dashboard-container">
+        
+        <!-- LEFT PANEL: Data Entry -->
+        <div class="data-section">
+            <div class="section-header">
+                <h2>Enter Data</h2>
+                <span class="pair-count">@(userPoints.Count == 1 ? "1 Pair" : $"{userPoints.Count} Pairs")</span>
+            </div>
+            
+            @if (HasError)
+            {
+                <div class="error-message">@errorMessage</div>
+            }
+
+            <div class="input-row">
+                <input type="text" 
+                    inputmode="decimal" 
+                    placeholder="X value" 
+                    @onkeyup="HandleEnter"
+                    class="text-input @(HasError ? "input-error" : "")"
+                    @bind="rawInputX" />
+
+                <input type="text" 
+                    inputmode="decimal" 
+                    placeholder="Y value" 
+                    @onkeyup="HandleEnter"
+                    class="text-input @(HasError ? "input-error" : "")"
+                    @bind="rawInputY" />
+                
+                <button class="btn-dark" @onclick="AddPoint">Add</button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="num-col">#</th>
+                            <th style="width: 40%;">X</th>
+                            <th style="width: 40%;">Y</th>
+                            <th class="action-col"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (userPoints.Count == 0)
+                        {
+                            <tr><td colspan="4" style="padding: 24px; color:#888;">No data points added.</td></tr>
+                        }
+                        @{ int index = 1; }
+                        @foreach (var point in userPoints)
+                        {
+                            <tr>
+                                <td class="num-col">@(index++)</td>
+                                <td>
+                                    <input type="number" step="any" class="inline-input" 
+                                           @bind="point.X" @bind:after="TriggerSoftInvalidation" />
+                                </td>
+                                <td>
+                                    <input type="number" step="any" class="inline-input" 
+                                           @bind="point.Y" @bind:after="TriggerSoftInvalidation" />
+                                </td>
+                                <td class="action-col">
+                                    <button class="btn-icon" @onclick="() => RemovePoint(point.Id)" title="Remove pair">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <button class="btn-simulate" 
+                    disabled="@(userPoints.Count < 2)" 
+                    title="@(userPoints.Count < 2 ? "Must have more than 1 pair" : "")" 
+                    @onclick="RunSimulation">
+                Simulate Regression
+            </button>
+        </div>
+
+        <!-- RIGHT PANEL: Results -->
+        @if (isSimulated || isClosing)
+        {
+            <div class="results-section @(isClosing ? "closing" : "entering")">
+                <div class="section-header">
+                    <h2>Model Results</h2>
+                </div>
+                
+                <div class="equation-line">
+                    <span>Model Equation:</span>
+                    <span class="equation-value">
+                        @FormatEquation(result.Intercept, result.Slope)
+                    </span>
+
+                    <span class="info-container" tabindex="0" role="button" aria-label="Formula derivation breakdown">
+                        <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        
+                        <div class="math-tooltip">
+                            <div class="tooltip-title">Slope (b) Derivation</div>
+                            <div class="tooltip-calc-block">
+                                <span>b = </span>
+                                <span class="fraction">
+                                    <span class="num">Σ((x - x̄)(y - ȳ))</span>
+                                    <span class="den">Σ((x - x̄)²)</span>
+                                </span>
+                                <span> = </span>
+                                <span class="fraction">
+                                    <span class="num">@FormatVal(result.SumCovariance)</span>
+                                    <span class="den">@FormatVal(result.SumVariance)</span>
+                                </span>
+                            </div>
+                            <div class="tooltip-calc-step" style="margin-bottom: 12px;">
+                                = @FormatVal(result.Slope)
+                            </div>
+
+                            <div class="tooltip-title">Intercept (a) Derivation</div>
+                            <div class="tooltip-calc-block">
+                                <span>a = ȳ - b(x̄)</span>
+                            </div>
+                            <div class="tooltip-calc-step">
+                                = @FormatVal(meanY) - (@FormatVal(result.Slope) × @FormatVal(meanX))
+                            </div>
+                            <div class="tooltip-calc-step">
+                                = @FormatVal(result.Intercept)
+                            </div>
+                        </div>
+                    </span>
+                </div>
+
+                <div class="table-container">
+                    <table class="math-table">
+                        <thead>
+                            <tr>
+                                <th class="num-col">#</th>
+                                <th>x</th>
+                                <th>y</th>
+                                <th>x - x̄</th>
+                                <th>y - ȳ</th>
+                                <th>(x - x̄)(y - ȳ)</th>
+                                <th>(x - x̄)²</th>
+                                <th class="highlight-col">Predicted y</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{ int mathIndex = 1; }
+                            @foreach (var row in result.Rows)
+                            {
+                                <tr>
+                                    <td class="num-col">@(mathIndex++)</td>
+                                    <td>@FormatVal(row.X)</td>
+                                    <td>@FormatVal(row.Y)</td>
+                                    <td>@FormatVal(row.XMinusXBar)</td>
+                                    <td>@FormatVal(row.YMinusYBar)</td>
+                                    <td>@FormatVal(row.Covariance)</td>
+                                    <td>@FormatVal(row.Variance)</td>
+                                    <td class="highlight-col">@FormatVal(row.PredictedY)</td>
+                                </tr>
+                            }
+                            <tr class="sum-row">
+                                <td colspan="5" style="text-align: right; padding-right: 14px;">Sum (Σ):</td>
+                                <td>@FormatVal(result.SumCovariance)</td>
+                                <td>@FormatVal(result.SumVariance)</td>
+                                <td class="highlight-col"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="predict-inline-bar">
+                    <span class="predict-label">Predict a Value with X :</span>
+                    <input type="number" step="any" class="text-input predict-input" 
+                        @bind="predictX" placeholder="Enter X value" />
+                    <button class="btn-dark" @onclick="MakePrediction">Predict</button>
+                    
+                    @if (predictedY.HasValue)
+                    {
+                        <div class="predict-result-wrapper">
+                            <span class="predict-arrow">→</span>
+                            <span class="predict-result">ŷ = @FormatVal(predictedY.Value)</span>
+                        </div>
+                    }
+                </div>
+
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<DataPoint> userPoints = new();
+    
+    private double? _inputX;
+    private double? InputX { get => _inputX; set { _inputX = value; ClearError(); } }
+
+    private double? _inputY;
+    private double? InputY { get => _inputY; set { _inputY = value; ClearError(); } }
+    private string rawInputX = "";
+    private string rawInputY = "";
+    private string errorMessage = "";
+    private bool HasError => !string.IsNullOrEmpty(errorMessage);
+    
+    private bool isSimulated = false;
+    private bool isClosing = false;
+    private RegressionResult result = new();
+
+    private double meanX = 0;
+    private double meanY = 0;
+
+    private double? predictX;
+    private double? predictedY;
+
+
+    private string FormatVal(double val)
+    {
+        if (Math.Abs(val) >= 1e7 || (Math.Abs(val) > 0 && Math.Abs(val) < 1e-4))
+        {
+            return val.ToString("G5");
+        }
+
+        return val.ToString("0.####");
+    }
+
+    private string FormatEquation(double a, double b)
+    {
+        string aStr = FormatVal(a);
+        string bSign = b < 0 ? "-" : "+";
+        string bStr = FormatVal(Math.Abs(b));
+
+        return $"y = a + bx = {aStr} {bSign} {bStr}x";
+    }
+
+    private void ClearError() => errorMessage = "";
+
+    private void AddPoint()
+    {
+        if (string.IsNullOrWhiteSpace(rawInputX) || string.IsNullOrWhiteSpace(rawInputY))
+        {
+            errorMessage = "Please enter both X and Y values.";
+            return;
+        }
+
+        bool validX = double.TryParse(rawInputX.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double parsedX);
+        bool validY = double.TryParse(rawInputY.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double parsedY);
+
+        if (!validX || !validY)
+        {
+            errorMessage = "Please enter valid numeric values.";
+            return;
+        }
+
+        if (userPoints.Count >= 50)
+        {
+            errorMessage = "Maximum of 50 data points allowed.";
+            return;
+        }
+
+        userPoints.Add(new DataPoint { X = parsedX, Y = parsedY });
+
+        rawInputX = "";
+        rawInputY = "";
+        ClearError();
+        TriggerSoftInvalidation();
+    }
+
+    private void HandleEnter(KeyboardEventArgs e) { if (e.Key == "Enter") AddPoint(); }
+
+    private void RemovePoint(Guid id)
+    {
+        var point = userPoints.FirstOrDefault(p => p.Id == id);
+        if (point != null)
+        {
+            userPoints.Remove(point);
+            TriggerSoftInvalidation();
+        }
+    }
+
+    private async void TriggerSoftInvalidation()
+    {
+        if (isSimulated)
+        {
+            isClosing = true;
+            StateHasChanged();
+            await Task.Delay(250); 
+            isSimulated = false;
+            isClosing = false;
+            
+            predictX = null;
+            predictedY = null;
+            
+            StateHasChanged();
+        }
+    }
+
+    private void RunSimulation()
+    {
+        ClearError();
+        result = RegressionEngine.Calculate(userPoints);
+        
+        if (!result.IsValid)
+        {
+            errorMessage = result.ErrorMessage;
+            isSimulated = false;
+        }
+        else
+        {
+            meanX = userPoints.Average(p => p.X);
+            meanY = userPoints.Average(p => p.Y);
+            isClosing = false;
+            isSimulated = true;
+            predictedY = null;
+        }
+    }
+
+    private void MakePrediction()
+    {
+        if (predictX.HasValue && isSimulated)
+        {
+            predictedY = result.Intercept + (result.Slope * predictX.Value);
+        }
+    }
+
+    
+}
